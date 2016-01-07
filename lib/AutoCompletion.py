@@ -21,7 +21,7 @@ ADDON_ID = ADDON.getAddonInfo('id')
 ADDON_DATA_PATH = xbmc.translatePath("special://profile/addon_data/%s" % ADDON_ID).decode("utf-8")
 
 
-def get_autocomplete_items(search_str):
+def get_autocomplete_items(search_str, limit=10):
     """
     get dict list with autocomplete labels from google
     """
@@ -33,6 +33,7 @@ def get_autocomplete_items(search_str):
         provider = GoogleProvider()
     else:
         provider = LocalDictProvider()
+    provider.limit = limit
     return provider.get_predictions(search_str)
 
 
@@ -40,6 +41,7 @@ class GoogleProvider:
 
     def __init__(self, *args, **kwargs):
         self.youtube = kwargs.get("youtube", False)
+        self.limit = 99
 
     def get_predictions(self, search_str):
         """
@@ -58,7 +60,7 @@ class GoogleProvider:
                                    folder="Google")
         if not result or len(result) <= 1:
             return []
-        for item in result[1]:
+        for i, item in enumerate(result[1]):
             if is_hebrew(item):
                 search_str = item[::-1]
             else:
@@ -66,13 +68,15 @@ class GoogleProvider:
             li = {"label": item,
                   "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
             listitems.append(li)
+            if i > self.limit:
+                break
         return listitems
 
 
 class LocalDictProvider:
 
-    def __init__(*args, **kwargs):
-        pass
+    def __init__(self, *args, **kwargs):
+        self.limit = 99
 
     def get_predictions(self, search_str):
         """
@@ -83,7 +87,6 @@ class LocalDictProvider:
         if k >= 0:
             search_str = search_str[k + 1:]
         path = os.path.join(ADDON_PATH, "resources", "data", "common_%s.txt" % SETTING("autocomplete_lang_local"))
-        log(path)
         with codecs.open(path, encoding="utf8") as f:
             for i, line in enumerate(f.readlines()):
                 if not line.startswith(search_str) or len(line) <= 2:
@@ -91,7 +94,7 @@ class LocalDictProvider:
                 li = {"label": line,
                       "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % line}
                 listitems.append(li)
-                if len(listitems) > 10:
+                if len(listitems) > self.limit:
                     break
         return listitems
 
