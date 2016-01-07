@@ -46,6 +46,19 @@ class BaseProvider(object):
     def get_predictions(self, search_str):
         pass
 
+    def prep_search_str(self, text):
+        if type(text) != unicode:
+            text = text.decode('utf-8')
+        for chr in text:
+            if ord(chr) >= 1488 and ord(chr) <= 1514:
+                return text[::-1]
+        return text
+
+    def get_prediction_listitems(self, search_str):
+        for item in self.get_predictions(search_str):
+            li = {"label": item,
+                  "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
+
 
 class GoogleProvider(BaseProvider):
 
@@ -69,10 +82,7 @@ class GoogleProvider(BaseProvider):
         if not result or len(result) <= 1:
             return []
         for i, item in enumerate(result[1]):
-            if is_hebrew(item):
-                search_str = item[::-1]
-            else:
-                search_str = item
+            search_str = self.prep_search_str(item)
             li = {"label": item,
                   "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
             listitems.append(li)
@@ -101,10 +111,7 @@ class BingProvider(BaseProvider):
         if not result or len(result) <= 1:
             return []
         for i, item in enumerate(result[1]):
-            if is_hebrew(item):
-                search_str = item[::-1]
-            else:
-                search_str = item
+            search_str = self.prep_search_str(item)
             li = {"label": item,
                   "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
             listitems.append(li)
@@ -235,13 +242,3 @@ def save_to_file(content, filename, path=""):
     text_file.close()
     log("saved textfile %s. Time: %f" % (text_file_path, time.time() - now))
     return True
-
-
-def is_hebrew(text):
-    if type(text) != unicode:
-        text = text.decode('utf-8')
-    for chr in text:
-        if ord(chr) >= 1488 and ord(chr) <= 1514:
-            return True
-    return False
-
