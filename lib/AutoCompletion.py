@@ -16,7 +16,7 @@ import simplejson
 
 ADDON = xbmcaddon.Addon()
 SETTING = ADDON.getSetting
-ADDON_PATH = ADDON.getAddonInfo('path').decode("utf-8")
+ADDON_PATH = os.path.join(os.path.dirname(__file__), "..")
 ADDON_ID = ADDON.getAddonInfo('id')
 ADDON_DATA_PATH = xbmc.translatePath("special://profile/addon_data/%s" % ADDON_ID).decode("utf-8")
 HEADERS = {'User-agent': 'Mozilla/5.0'}
