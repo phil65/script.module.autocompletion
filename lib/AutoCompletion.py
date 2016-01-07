@@ -58,6 +58,7 @@ class BaseProvider(object):
         for item in self.get_predictions(search_str):
             li = {"label": item,
                   "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
+            yield li
 
 
 class GoogleProvider(BaseProvider):
@@ -72,6 +73,17 @@ class GoogleProvider(BaseProvider):
         if not search_str:
             return []
         listitems = []
+        result = self.fetch_data(search_str)
+        for i, item in enumerate(result):
+            search_str = self.prep_search_str(item)
+            li = {"label": item,
+                  "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
+            listitems.append(li)
+            if i > self.limit:
+                break
+        return listitems
+
+    def fetch_data(self, search_str):
         base_url = "http://clients1.google.com/complete/"
         url = "search?hl=%s&q=%s&json=t&client=serp" % (SETTING("autocomplete_lang"), urllib.quote_plus(search_str))
         if self.youtube:
@@ -81,36 +93,24 @@ class GoogleProvider(BaseProvider):
                                    folder="Google")
         if not result or len(result) <= 1:
             return []
-        for i, item in enumerate(result[1]):
-            search_str = self.prep_search_str(item)
-            li = {"label": item,
-                  "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
-            listitems.append(li)
-            if i > self.limit:
-                break
-        return listitems
+        else:
+            return result[1]
 
 
 class BingProvider(BaseProvider):
 
     def __init__(self, *args, **kwargs):
-        self.limit = 99
+        pass
 
     def get_predictions(self, search_str):
         """
-        get dict list with autocomplete labels from google
+        get dict list with autocomplete labels from bing
         """
         if not search_str:
             return []
         listitems = []
-        base_url = "http://clients1.google.com/complete/"
-        url = "search?hl=%s&q=%s&json=t&client=serp" % (SETTING("autocomplete_lang"), urllib.quote_plus(search_str))
-        result = get_JSON_response(url=base_url + url,
-                                   headers=HEADERS,
-                                   folder="Google")
-        if not result or len(result) <= 1:
-            return []
-        for i, item in enumerate(result[1]):
+        result = self.fetch_data(search_str)
+        for i, item in enumerate(result):
             search_str = self.prep_search_str(item)
             li = {"label": item,
                   "path": "plugin://script.extendedinfo/?info=selectautocomplete&&id=%s" % search_str}
@@ -118,6 +118,17 @@ class BingProvider(BaseProvider):
             if i > self.limit:
                 break
         return listitems
+
+    def fetch_data(self, search_str):
+        base_url = "http://api.bing.com/osjson.aspx?"
+        url = "query=%s" % (urllib.quote_plus(search_str))
+        result = get_JSON_response(url=base_url + url,
+                                   headers=HEADERS,
+                                   folder="Bing")
+        if not result:
+            return []
+        else:
+            return result
 
 
 class LocalDictProvider(BaseProvider):
