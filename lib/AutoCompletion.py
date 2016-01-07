@@ -32,6 +32,8 @@ def get_autocomplete_items(search_str, limit=10):
         provider = GoogleProvider(youtube=True)
     elif SETTING("autocomplete_provider") == "google":
         provider = GoogleProvider()
+    elif SETTING("autocomplete_provider") == "bing":
+        provider = BingProvider()
     else:
         provider = LocalDictProvider()
     provider.limit = limit
@@ -110,6 +112,7 @@ class BingProvider(BaseProvider):
             return []
         listitems = []
         result = self.fetch_data(search_str)
+        log(result)
         for i, item in enumerate(result):
             search_str = self.prep_search_str(item)
             li = {"label": item,
@@ -128,7 +131,7 @@ class BingProvider(BaseProvider):
         if not result:
             return []
         else:
-            return result
+            return result[1]
 
 
 class LocalDictProvider(BaseProvider):
