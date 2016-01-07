@@ -25,6 +25,8 @@ def get_autocomplete_items(search_str):
     """
     get dict list with autocomplete labels from google
     """
+    if xbmc.getCondVisibility("System.HasHiddenInput"):
+        return []
     if SETTING("autocomplete_provider") == "youtube":
         return get_google_autocomplete_items(search_str, True)
     elif SETTING("autocomplete_provider") == "google":
