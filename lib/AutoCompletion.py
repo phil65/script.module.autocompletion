@@ -59,7 +59,7 @@ class BaseProvider(object):
     def get_prediction_listitems(self, search_str):
         for item in self.get_predictions(search_str):
             li = {"label": item,
-                  "path": search_str}
+                  "search_string": search_str}
             yield li
 
 
@@ -79,7 +79,7 @@ class GoogleProvider(BaseProvider):
         result = self.fetch_data(search_str)
         for i, item in enumerate(result):
             li = {"label": item,
-                  "path": self.prep_search_str(item)}
+                  "search_string": self.prep_search_str(item)}
             items.append(li)
             if i > self.limit:
                 break
@@ -114,7 +114,7 @@ class BingProvider(BaseProvider):
         result = self.fetch_data(search_str)
         for i, item in enumerate(result):
             li = {"label": item,
-                  "path": self.prep_search_str(item)}
+                  "search_string": self.prep_search_str(item)}
             items.append(li)
             if i > self.limit:
                 break
@@ -151,7 +151,7 @@ class LocalDictProvider(BaseProvider):
                 if not line.startswith(search_str) or len(line) <= 2:
                     continue
                 li = {"label": line,
-                      "path": line}
+                      "search_string": line}
                 listitems.append(li)
                 if len(listitems) > self.limit:
                     break
