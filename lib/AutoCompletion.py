@@ -34,6 +34,8 @@ def get_autocomplete_items(search_str, limit=10, provider=None):
         provider = GoogleProvider(limit=limit)
     elif SETTING("autocomplete_provider") == "bing":
         provider = BingProvider(limit=limit)
+    elif SETTING("autocomplete_provider") == "netflix":
+        provider = NetflixProvider(limit=limit)
     else:
         provider = LocalDictProvider(limit=limit)
     provider.limit = limit
@@ -121,10 +123,9 @@ class NetflixProvider(BaseProvider):
         result = get_JSON_response(url=base_url + url,
                                    headers=HEADERS,
                                    folder="Bing")
-        if not result:
+        if not result or not result["groups"]:
             return []
-        else:
-            return result[1]
+        return [i["title"] for i in result["groups"][0]["items"]]
 
 
 class LocalDictProvider(BaseProvider):
@@ -193,7 +194,7 @@ def get_http(url=None, headers=False):
     """
     succeed = 0
     if not headers:
-        headers = {'User-agent': 'XBMC/14.0 ( phil65@kodi.tv )'}
+        headers = {'User-agent': 'XBMC/16.0 ( phil65@kodi.tv )'}
     request = urllib2.Request(url)
     for (key, value) in headers.iteritems():
         request.add_header(key, value)
