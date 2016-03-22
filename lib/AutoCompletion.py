@@ -46,7 +46,17 @@ class BaseProvider(object):
         self.limit = kwargs.get("limit", 10)
 
     def get_predictions(self, search_str):
-        pass
+        if not search_str:
+            return []
+        items = []
+        result = self.fetch_data(search_str)
+        for i, item in enumerate(result):
+            li = {"label": item,
+                  "search_string": self.prep_search_str(item)}
+            items.append(li)
+            if i > self.limit:
+                break
+        return items
 
     def prep_search_str(self, text):
         if type(text) != unicode:
@@ -69,22 +79,6 @@ class GoogleProvider(BaseProvider):
         super(GoogleProvider, self).__init__(*args, **kwargs)
         self.youtube = kwargs.get("youtube", False)
 
-    def get_predictions(self, search_str):
-        """
-        get dict list with autocomplete labels from google
-        """
-        if not search_str:
-            return []
-        items = []
-        result = self.fetch_data(search_str)
-        for i, item in enumerate(result):
-            li = {"label": item,
-                  "search_string": self.prep_search_str(item)}
-            items.append(li)
-            if i > self.limit:
-                break
-        return items
-
     def fetch_data(self, search_str):
         base_url = "http://clients1.google.com/complete/"
         url = "search?hl=%s&q=%s&json=t&client=serp" % (SETTING("autocomplete_lang"), urllib.quote_plus(search_str))
@@ -104,25 +98,26 @@ class BingProvider(BaseProvider):
     def __init__(self, *args, **kwargs):
         super(BingProvider, self).__init__(*args, **kwargs)
 
-    def get_predictions(self, search_str):
-        """
-        get dict list with autocomplete labels from bing
-        """
-        if not search_str:
-            return []
-        items = []
-        result = self.fetch_data(search_str)
-        for i, item in enumerate(result):
-            li = {"label": item,
-                  "search_string": self.prep_search_str(item)}
-            items.append(li)
-            if i > self.limit:
-                break
-        return items
-
     def fetch_data(self, search_str):
         base_url = "http://api.bing.com/osjson.aspx?"
         url = "query=%s" % (urllib.quote_plus(search_str))
+        result = get_JSON_response(url=base_url + url,
+                                   headers=HEADERS,
+                                   folder="Bing")
+        if not result:
+            return []
+        else:
+            return result[1]
+
+
+class NetflixProvider(BaseProvider):
+
+    def __init__(self, *args, **kwargs):
+        super(NetflixProvider, self).__init__(*args, **kwargs)
+
+    def fetch_data(self, search_str):
+        base_url = "http://api-global.netflix.com/desktop/search/autocomplete?"
+        url = "term=%s" % (urllib.quote_plus(search_str))
         result = get_JSON_response(url=base_url + url,
                                    headers=HEADERS,
                                    folder="Bing")
