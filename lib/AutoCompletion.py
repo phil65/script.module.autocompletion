@@ -141,7 +141,8 @@ class LocalDictProvider(BaseProvider):
         k = search_str.rfind(" ")
         if k >= 0:
             search_str = search_str[k + 1:]
-        path = os.path.join(ADDON_PATH, "resources", "data", "common_%s.txt" % SETTING("autocomplete_lang_local"))
+        local = SETTING("autocomplete_lang_local")
+        path = os.path.join(ADDON_PATH, "resources", "data", "common_%s.txt" % (local if local else "en"))
         with codecs.open(path, encoding="utf8") as f:
             for i, line in enumerate(f.readlines()):
                 if not line.startswith(search_str) or len(line) <= 2:
