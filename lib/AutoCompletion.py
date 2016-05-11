@@ -148,7 +148,7 @@ class LocalDictProvider(BaseProvider):
         local = SETTING("autocomplete_lang_local")
         path = os.path.join(ADDON_PATH, "resources", "data", "common_%s.txt" % (local if local else "en"))
         with codecs.open(path, encoding="utf8") as f:
-            for i, line in enumerate(f.readlines()):
+            for line in f.readlines():
                 if not line.startswith(search_str) or len(line) <= 2:
                     continue
                 li = {"label": line,
@@ -180,7 +180,7 @@ def get_JSON_response(url="", cache_days=7.0, folder=False, headers=False):
             results = simplejson.loads(response)
             log("download %s. time: %f" % (url, time.time() - now))
             save_to_file(results, hashed_url, cache_path)
-        except:
+        except Exception:
             log("Exception: Could not get new JSON data from %s. Tryin to fallback to cache" % url)
             log(response)
             if xbmcvfs.exists(path):
@@ -208,7 +208,7 @@ def get_http(url=None, headers=False):
             response = urllib2.urlopen(request, timeout=3)
             data = response.read()
             return data
-        except:
+        except Exception:
             log("get_http: could not get data from %s" % url)
             xbmc.sleep(1000)
             succeed += 1
@@ -228,7 +228,7 @@ def read_from_file(path="", raw=False):
                 return f.read()
             else:
                 return simplejson.load(f)
-    except:
+    except Exception:
         log("failed to load textfile: " + path)
         return False
 
