@@ -42,6 +42,15 @@ def get_autocomplete_items(search_str, limit=10, provider=None):
     return provider.get_predictions(search_str)
 
 
+def prep_search_str(self, text):
+    if not isinstance(text, unicode):
+        text = text.decode('utf-8')
+    for char in text:
+        if ord(char) >= 1488 and ord(char) <= 1514:
+            return text[::-1]
+    return text
+
+
 class BaseProvider(object):
 
     def __init__(self, *args, **kwargs):
@@ -54,19 +63,11 @@ class BaseProvider(object):
         result = self.fetch_data(search_str)
         for i, item in enumerate(result):
             li = {"label": item,
-                  "search_string": self.prep_search_str(item)}
+                  "search_string": prep_search_str(item)}
             items.append(li)
             if i > self.limit:
                 break
         return items
-
-    def prep_search_str(self, text):
-        if type(text) != unicode:
-            text = text.decode('utf-8')
-        for chr in text:
-            if ord(chr) >= 1488 and ord(chr) <= 1514:
-                return text[::-1]
-        return text
 
     def get_prediction_listitems(self, search_str):
         for item in self.get_predictions(search_str):
@@ -77,16 +78,17 @@ class BaseProvider(object):
 
 class GoogleProvider(BaseProvider):
 
+    BASE_URL = "http://clients1.google.com/complete/"
+
     def __init__(self, *args, **kwargs):
         super(GoogleProvider, self).__init__(*args, **kwargs)
         self.youtube = kwargs.get("youtube", False)
 
     def fetch_data(self, search_str):
-        base_url = "http://clients1.google.com/complete/"
         url = "search?hl=%s&q=%s&json=t&client=serp" % (SETTING("autocomplete_lang"), urllib.quote_plus(search_str))
         if self.youtube:
             url += "&ds=yt"
-        result = get_JSON_response(url=base_url + url,
+        result = get_JSON_response(url=self.BASE_URL + url,
                                    headers=HEADERS,
                                    folder="Google")
         if not result or len(result) <= 1:
@@ -97,13 +99,14 @@ class GoogleProvider(BaseProvider):
 
 class BingProvider(BaseProvider):
 
+    BASE_URL = "http://api.bing.com/osjson.aspx?"
+
     def __init__(self, *args, **kwargs):
         super(BingProvider, self).__init__(*args, **kwargs)
 
     def fetch_data(self, search_str):
-        base_url = "http://api.bing.com/osjson.aspx?"
         url = "query=%s" % (urllib.quote_plus(search_str))
-        result = get_JSON_response(url=base_url + url,
+        result = get_JSON_response(url=self.BASE_URL + url,
                                    headers=HEADERS,
                                    folder="Bing")
         if not result:
@@ -114,13 +117,14 @@ class BingProvider(BaseProvider):
 
 class NetflixProvider(BaseProvider):
 
+    BASE_URL = "http://api-global.netflix.com/desktop/search/autocomplete?"
+
     def __init__(self, *args, **kwargs):
         super(NetflixProvider, self).__init__(*args, **kwargs)
 
     def fetch_data(self, search_str):
-        base_url = "http://api-global.netflix.com/desktop/search/autocomplete?"
         url = "term=%s" % (urllib.quote_plus(search_str))
-        result = get_JSON_response(url=base_url + url,
+        result = get_JSON_response(url=self.BASE_URL + url,
                                    headers=HEADERS,
                                    folder="Bing")
         if not result or not result["groups"]:
