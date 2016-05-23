@@ -42,7 +42,7 @@ def get_autocomplete_items(search_str, limit=10, provider=None):
     return provider.get_predictions(search_str)
 
 
-def prep_search_str(self, text):
+def prep_search_str(text):
     if not isinstance(text, unicode):
         text = text.decode('utf-8')
     for char in text:
