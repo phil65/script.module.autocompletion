@@ -10,7 +10,7 @@ import codecs
 import os
 import time
 import hashlib
-import urllib2
+import requests
 import xbmc
 import simplejson
 
@@ -200,14 +200,12 @@ def get_http(url=None, headers=False):
     succeed = 0
     if not headers:
         headers = {'User-agent': 'XBMC/16.0 ( phil65@kodi.tv )'}
-    request = urllib2.Request(url)
-    for (key, value) in headers.iteritems():
-        request.add_header(key, value)
     while (succeed < 2) and (not xbmc.abortRequested):
         try:
-            response = urllib2.urlopen(request, timeout=3)
-            data = response.read()
-            return data
+            r = requests.get(url, headers=headers)
+            if r.status_code != 200:
+                raise Exception
+            return r.text
         except Exception:
             log("get_http: could not get data from %s" % url)
             xbmc.sleep(1000)
