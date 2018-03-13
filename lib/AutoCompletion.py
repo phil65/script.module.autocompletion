@@ -46,7 +46,7 @@ def prep_search_str(text):
     if not isinstance(text, unicode):
         text = text.decode('utf-8')
     for char in text:
-        if ord(char) >= 1488 and ord(char) <= 1514:
+        if 1488 <= ord(char) <= 1514:
             return text[::-1]
     return text
 
