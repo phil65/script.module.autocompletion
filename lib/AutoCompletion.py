@@ -3,23 +3,30 @@
 # Copyright (C) 2015 - Philipp Temminghoff <phil65@kodi.tv>
 # This program is Free Software see LICENSE file for details
 
-import xbmcaddon
-import xbmcvfs
+import sys
 import urllib
 import codecs
 import os
 import time
 import hashlib
 import requests
-import xbmc
 import simplejson
+
+import xbmcaddon
+import xbmcvfs
+import xbmc
+
+PY2 = sys.version_info[0] == 2
+
+HEADERS = {'User-agent': 'Mozilla/5.0'}
 
 ADDON = xbmcaddon.Addon()
 SETTING = ADDON.getSetting
 ADDON_PATH = os.path.join(os.path.dirname(__file__), "..")
 ADDON_ID = ADDON.getAddonInfo('id')
-ADDON_DATA_PATH = xbmc.translatePath("special://profile/addon_data/%s" % ADDON_ID).decode("utf-8")
-HEADERS = {'User-agent': 'Mozilla/5.0'}
+ADDON_DATA_PATH = xbmc.translatePath("special://profile/addon_data/%s" % ADDON_ID)
+if PY2:
+    ADDON_DATA_PATH = ADDON_DATA_PATH.decode("utf-8")
 
 
 def get_autocomplete_items(search_str, limit=10, provider=None):
