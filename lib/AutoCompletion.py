@@ -135,7 +135,7 @@ class NetflixProvider(BaseProvider):
         url = "term=%s" % (urllib.quote_plus(search_str))
         result = get_JSON_response(url=self.BASE_URL + url,
                                    headers=HEADERS,
-                                   folder="Bing")
+                                   folder="Netflix")
         if not result or not result["groups"]:
             return []
         return [i["title"] for i in result["groups"][0]["items"]]
