@@ -43,6 +43,8 @@ def get_autocomplete_items(search_str, limit=10, provider=None):
         provider = BingProvider(limit=limit)
     elif SETTING("autocomplete_provider") == "netflix":
         provider = NetflixProvider(limit=limit)
+    elif SETTING("autocomplete_provider") == "tmdb":
+        provider = TmdbProvider(limit=limit)
     else:
         provider = LocalDictProvider(limit=limit)
     provider.limit = limit
@@ -137,6 +139,33 @@ class NetflixProvider(BaseProvider):
         if not result or not result["groups"]:
             return []
         return [i["title"] for i in result["groups"][0]["items"]]
+
+class TmdbProvider(BaseProvider):
+
+    BASE_URL = "https://www.themoviedb.org/search/multi?"
+
+    def __init__(self, *args, **kwargs):
+        super(TmdbProvider, self).__init__(*args, **kwargs)
+
+    def fetch_data(self, search_str):
+        url = "language=%s&query=%s" % (SETTING("autocomplete_lang"),urllib.quote_plus(search_str))
+        result = get_JSON_response(url=self.BASE_URL + url,
+                                   headers=HEADERS,
+                                   folder="TMDB")
+        if not result or "results" not in result:
+            return []
+        out = []
+        for i in result["results"]:
+            title = None
+            if "media_type" in i:
+                if i["media_type"] == "movie":
+                    title = i["title"]
+                elif i["media_type"] in ["tv", "person"]:
+                    title = i["name"]
+            else:
+                title = i
+            out.append(title)
+        return out
 
 
 class LocalDictProvider(BaseProvider):
