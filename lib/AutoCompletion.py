@@ -3,20 +3,16 @@
 # Copyright (C) 2015 - Philipp Temminghoff <phil65@kodi.tv>
 # This program is Free Software see LICENSE file for details
 
-import sys
-import urllib
-import codecs
+from urllib.parse import quote_plus
 import os
 import time
 import hashlib
 import requests
-import simplejson
+import json
 
+import xbmc
 import xbmcaddon
 import xbmcvfs
-import xbmc
-
-PY2 = sys.version_info[0] == 2
 
 HEADERS = {'User-agent': 'Mozilla/5.0'}
 
@@ -24,9 +20,7 @@ ADDON = xbmcaddon.Addon()
 SETTING = ADDON.getSetting
 ADDON_PATH = os.path.join(os.path.dirname(__file__), "..")
 ADDON_ID = ADDON.getAddonInfo('id')
-ADDON_DATA_PATH = xbmc.translatePath("special://profile/addon_data/%s" % ADDON_ID)
-if PY2:
-    ADDON_DATA_PATH = ADDON_DATA_PATH.decode("utf-8")
+ADDON_DATA_PATH = xbmcvfs.translatePath("special://profile/addon_data/%s" % ADDON_ID)
 
 
 def get_autocomplete_items(search_str, limit=10, provider=None):
@@ -50,8 +44,6 @@ def get_autocomplete_items(search_str, limit=10, provider=None):
 
 
 def prep_search_str(text):
-    if not isinstance(text, unicode):
-        text = text.decode('utf-8')
     for char in text:
         if 1488 <= ord(char) <= 1514:
             return text[::-1]
@@ -59,7 +51,6 @@ def prep_search_str(text):
 
 
 class BaseProvider(object):
-
     def __init__(self, *args, **kwargs):
         self.limit = kwargs.get("limit", 10)
 
@@ -72,7 +63,7 @@ class BaseProvider(object):
             li = {"label": item,
                   "search_string": prep_search_str(item)}
             items.append(li)
-            if i > self.limit:
+            if i > int(self.limit):
                 break
         return items
 
@@ -92,7 +83,10 @@ class GoogleProvider(BaseProvider):
         self.youtube = kwargs.get("youtube", False)
 
     def fetch_data(self, search_str):
-        url = "search?hl=%s&q=%s&json=t&client=serp" % (SETTING("autocomplete_lang"), urllib.quote_plus(search_str))
+        url = "search?hl=%s&q=%s&json=t&client=serp" % (
+            SETTING("autocomplete_lang"),
+            quote_plus(search_str),
+        )
         if self.youtube:
             url += "&ds=yt"
         result = get_JSON_response(url=self.BASE_URL + url,
@@ -112,10 +106,10 @@ class BingProvider(BaseProvider):
         super(BingProvider, self).__init__(*args, **kwargs)
 
     def fetch_data(self, search_str):
-        url = "query=%s" % (urllib.quote_plus(search_str))
-        result = get_JSON_response(url=self.BASE_URL + url,
-                                   headers=HEADERS,
-                                   folder="Bing")
+        url = "query=%s" % (quote_plus(search_str))
+        result = get_JSON_response(
+            url=self.BASE_URL + url, headers=HEADERS, folder="Bing"
+        )
         if not result:
             return []
         else:
@@ -130,10 +124,13 @@ class TmdbProvider(BaseProvider):
         super(TmdbProvider, self).__init__(*args, **kwargs)
 
     def fetch_data(self, search_str):
-        url = "language=%s&query=%s" % (SETTING("autocomplete_lang"),urllib.quote_plus(search_str))
-        result = get_JSON_response(url=self.BASE_URL + url,
-                                   headers=HEADERS,
-                                   folder="TMDB")
+        url = "language=%s&query=%s" % (
+            SETTING("autocomplete_lang"),
+            quote_plus(search_str),
+        )
+        result = get_JSON_response(
+            url=self.BASE_URL + url, headers=HEADERS, folder="TMDB"
+        )
         if not result or "results" not in result:
             return []
         out = []
@@ -151,7 +148,6 @@ class TmdbProvider(BaseProvider):
 
 
 class LocalDictProvider(BaseProvider):
-
     def __init__(self, *args, **kwargs):
         super(LocalDictProvider, self).__init__(*args, **kwargs)
 
@@ -165,14 +161,14 @@ class LocalDictProvider(BaseProvider):
             search_str = search_str[k + 1:]
         local = SETTING("autocomplete_lang_local")
         path = os.path.join(ADDON_PATH, "resources", "data", "common_%s.txt" % (local if local else "en"))
-        with codecs.open(path, encoding="utf8") as f:
-            for line in f.readlines():
+        with xbmcvfs.File(path) as f:
+            for line in f.read().split('\n'):
                 if not line.startswith(search_str) or len(line) <= 2:
                     continue
                 li = {"label": line,
                       "search_string": line}
                 listitems.append(li)
-                if len(listitems) > self.limit:
+                if len(listitems) > int(self.limit):
                     break
         return listitems
 
@@ -182,7 +178,7 @@ def get_JSON_response(url="", cache_days=7.0, folder=False, headers=False):
     get JSON response for *url, makes use of file cache.
     """
     now = time.time()
-    hashed_url = hashlib.md5(url).hexdigest()
+    hashed_url = hashlib.md5(url.encode('utf-8')).hexdigest()
     if folder:
         cache_path = xbmc.translatePath(os.path.join(ADDON_DATA_PATH, folder))
     else:
@@ -195,7 +191,7 @@ def get_JSON_response(url="", cache_days=7.0, folder=False, headers=False):
     else:
         response = get_http(url, headers)
         try:
-            results = simplejson.loads(response)
+            results = json.loads(response)
             log("download %s. time: %f" % (url, time.time() - now))
             save_to_file(results, hashed_url, cache_path)
         except Exception:
@@ -218,7 +214,8 @@ def get_http(url=None, headers=False):
     succeed = 0
     if not headers:
         headers = {'User-agent': 'XBMC/16.0 ( phil65@kodi.tv )'}
-    while (succeed < 2) and (not xbmc.abortRequested):
+    monitor = xbmc.Monitor()
+    while (succeed < 2) and (not monitor.abortRequested()):
         try:
             r = requests.get(url, headers=headers)
             if r.status_code != 200:
@@ -226,7 +223,7 @@ def get_http(url=None, headers=False):
             return r.text
         except Exception:
             log("get_http: could not get data from %s" % url)
-            xbmc.sleep(1000)
+            monitor.waitForAbort(1)
             succeed += 1
     return None
 
@@ -237,24 +234,22 @@ def read_from_file(path="", raw=False):
     """
     if not xbmcvfs.exists(path):
         return False
+
     try:
-        with open(path) as f:
+        with xbmcvfs.File(path) as f:
             log("opened textfile %s." % (path))
             if raw:
                 return f.read()
             else:
-                return simplejson.load(f)
+                return json.load(f)
     except Exception:
         log("failed to load textfile: " + path)
         return False
 
 
 def log(txt):
-    if isinstance(txt, str):
-        txt = txt.decode("utf-8", 'ignore')
     message = u'%s: %s' % (ADDON_ID, txt)
-    xbmc.log(msg=message.encode("utf-8", 'ignore'),
-             level=xbmc.LOGDEBUG)
+    xbmc.log(msg=message, level=xbmc.LOGDEBUG)
 
 
 def save_to_file(content, filename, path=""):
@@ -263,10 +258,12 @@ def save_to_file(content, filename, path=""):
     """
     if not xbmcvfs.exists(path):
         xbmcvfs.mkdirs(path)
+
     text_file_path = os.path.join(path, filename + ".txt")
     now = time.time()
-    text_file = xbmcvfs.File(text_file_path, "w")
-    simplejson.dump(content, text_file)
-    text_file.close()
+
+    with xbmcvfs.File(text_file_path, "w") as text_file:
+        json.dump(content, text_file)
+
     log("saved textfile %s. Time: %f" % (text_file_path, time.time() - now))
     return True
