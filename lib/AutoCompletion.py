@@ -41,8 +41,6 @@ def get_autocomplete_items(search_str, limit=10, provider=None):
         provider = GoogleProvider(limit=limit)
     elif SETTING("autocomplete_provider") == "bing":
         provider = BingProvider(limit=limit)
-    elif SETTING("autocomplete_provider") == "netflix":
-        provider = NetflixProvider(limit=limit)
     elif SETTING("autocomplete_provider") == "tmdb":
         provider = TmdbProvider(limit=limit)
     else:
@@ -123,22 +121,6 @@ class BingProvider(BaseProvider):
         else:
             return result[1]
 
-
-class NetflixProvider(BaseProvider):
-
-    BASE_URL = "http://api-global.netflix.com/desktop/search/autocomplete?"
-
-    def __init__(self, *args, **kwargs):
-        super(NetflixProvider, self).__init__(*args, **kwargs)
-
-    def fetch_data(self, search_str):
-        url = "term=%s" % (urllib.quote_plus(search_str))
-        result = get_JSON_response(url=self.BASE_URL + url,
-                                   headers=HEADERS,
-                                   folder="Netflix")
-        if not result or not result["groups"]:
-            return []
-        return [i["title"] for i in result["groups"][0]["items"]]
 
 class TmdbProvider(BaseProvider):
 
