@@ -133,9 +133,10 @@ class TmdbProvider(BaseProvider):
         return url
 
     def process_result(self, result):
-        if not result or not (results := result.get("results")):
+        if not result or not result.get("results"):
             return []
         out = []
+        results = result.get("results")
         for i in results:
             title = None
             if media_type := i.get("media_type"):
