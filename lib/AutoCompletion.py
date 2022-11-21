@@ -14,13 +14,12 @@ import xbmc
 import xbmcaddon
 import xbmcvfs
 
-HEADERS = {'User-agent': 'Mozilla/5.0'}
-
-ADDON = xbmcaddon.Addon()
+SCRIPT_ID = "script.module.autocompletion"
+ADDON = xbmcaddon.Addon(SCRIPT_ID)
 SETTING = ADDON.getSetting
-ADDON_PATH = os.path.join(os.path.dirname(__file__), "..")
-ADDON_ID = ADDON.getAddonInfo('id')
-ADDON_DATA_PATH = xbmcvfs.translatePath("special://profile/addon_data/%s" % ADDON_ID)
+ADDON_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo("path"))
+ADDON_ID = ADDON.getAddonInfo("id")
+ADDON_DATA_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
 
 
 def get_autocomplete_items(search_str, limit=10, provider=None):
