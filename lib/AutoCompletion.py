@@ -139,11 +139,11 @@ class TmdbProvider(BaseProvider):
         results = result.get("results")
         for i in results:
             title = None
-            if media_type := i.get("media_type"):
-                if media_type == "movie":
-                    title = i["title"]
-                elif media_type in ["tv", "person"]:
-                    title = i["name"]
+            media_type = i.get("media_type")
+            if media_type == "movie":
+                title = i["title"]
+            elif media_type in ["tv", "person"]:
+                title = i["name"]
             else:
                 title = i
             out.append(title)
@@ -153,7 +153,8 @@ class TmdbProvider(BaseProvider):
 class LocalDictProvider(BaseProvider):
     def __init__(self, *args, **kwargs):
         super(LocalDictProvider, self).__init__(*args, **kwargs)
-        if local := SETTING("autocomplete_lang_local"):
+        local = SETTING("autocomplete_lang_local")
+        if local:
             self.language = local
         else:
             self.language = "en"
