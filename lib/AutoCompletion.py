@@ -178,24 +178,23 @@ def get_JSON_response(url="", cache_days=7.0, folder=False, headers=False):
     get JSON response for *url, makes use of file cache.
     """
     now = time.time()
-    hashed_url = hashlib.md5(url.encode('utf-8')).hexdigest()
-    if folder:
-        cache_path = xbmcvfs.translatePath(os.path.join(ADDON_DATA_PATH, folder))
-    else:
-        cache_path = xbmcvfs.translatePath(os.path.join(ADDON_DATA_PATH))
-    path = os.path.join(cache_path, hashed_url + ".txt")
-    cache_seconds = int(cache_days * 86400.0)
+    hashed_url = hashlib.md5(url.encode("utf-8")).hexdigest()
+    cache_path = xbmcvfs.translatePath(os.path.join(ADDON_DATA_PATH, folder) if folder else ADDON_DATA_PATH)
+    path = os.path.join(cache_path, f"{hashed_url}.txt")
+    cache_seconds = int(cache_days * 86400)
+    results = []
+
     if xbmcvfs.exists(path) and ((now - os.path.getmtime(path)) < cache_seconds):
         results = read_from_file(path)
-        log("loaded file for %s. time: %f" % (url, time.time() - now))
+        log(f"loaded file for {url}. time: {float(time.time() - now)}")
     else:
         response = get_http(url, headers)
         try:
             results = json.loads(response)
-            log("download %s. time: %f" % (url, time.time() - now))
+            log(f"download {url}. time: {float(time.time() - now)}")
             save_to_file(results, hashed_url, cache_path)
         except Exception:
-            log("Exception: Could not get new JSON data from %s. Tryin to fallback to cache" % url)
+            log(f"Exception: Could not get new JSON data from {url}. Trying to fallback to cache")
             log(response)
             if xbmcvfs.exists(path):
                 results = read_from_file(path)
@@ -222,7 +221,7 @@ def get_http(url=None, headers=False):
                 raise Exception
             return r.text
         except Exception:
-            log("get_http: could not get data from %s" % url)
+            log(f"get_http: could not get data from {url}")
             monitor.waitForAbort(1)
             succeed += 1
     return None
@@ -237,18 +236,18 @@ def read_from_file(path="", raw=False):
 
     try:
         with xbmcvfs.File(path) as f:
-            log("opened textfile %s." % (path))
+            log(f"opened textfile {path}.")
             if raw:
                 return f.read()
             else:
                 return json.load(f)
     except Exception:
-        log("failed to load textfile: " + path)
+        log(f"failed to load textfile: {path}")
         return False
 
 
 def log(txt):
-    message = u'%s: %s' % (ADDON_ID, txt)
+    message = f"{ADDON_ID}: {txt}"
     xbmc.log(msg=message, level=xbmc.LOGDEBUG)
 
 
@@ -259,11 +258,11 @@ def save_to_file(content, filename, path=""):
     if not xbmcvfs.exists(path):
         xbmcvfs.mkdirs(path)
 
-    text_file_path = os.path.join(path, filename + ".txt")
+    text_file_path = os.path.join(path, f"{filename}.txt")
     now = time.time()
 
     with xbmcvfs.File(text_file_path, "w") as text_file:
         json.dump(content, text_file)
 
-    log("saved textfile %s. Time: %f" % (text_file_path, time.time() - now))
+    log(f"saved textfile {text_file_path}. Time: {float(time.time() - now)}")
     return True
