@@ -20,7 +20,7 @@ jobs:
       env:
         ADDON_ID: ${{ github.event.repository.name }}
       run: |
-        echo "##[set-output name=branch;]$(git --no-pager branch -a --contains "$GITHUB_SHA" | grep 'remotes/origin/' | cut -d '/' -f3)"
+        echo "##[set-output name=branch;]matrix"
         if [[ $ADDON_ID == plugin* ]]; then
             echo "##[set-output name=repo;]repo-plugins"
         else
@@ -43,7 +43,7 @@ jobs:
         kodi-version: ${{ steps.extract_branch_pr.outputs.branch }}
         addon-id: ${{ github.event.repository.name }}
       env: # Make sure you create the below secrets (GH_TOKEN and EMAIL)
-        GH_USERNAME: ${{ github.actor }}
+        GH_USERNAME: ${{ github.repository_owner }}
         GH_TOKEN: ${{secrets.GH_TOKEN}}
         EMAIL: ${{secrets.EMAIL}}
 
